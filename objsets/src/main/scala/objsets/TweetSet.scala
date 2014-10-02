@@ -2,6 +2,8 @@ package objsets
 
 import common._
 import TweetReader._
+import scala.annotation.tailrec
+import java.io.FileOutputStream
 
 /**
  * A class to represent tweets.
@@ -34,8 +36,8 @@ class Tweet(val user: String, val text: String, val retweets: Int) {
  * [1] http://en.wikipedia.org/wiki/Binary_search_tree
  */
 abstract class TweetSet {
-  
-
+  def isEmpty: Boolean
+  val size: Int
   /**
    * This method takes a predicate and returns a subset of all the elements
    * in the original set for which the predicate is true.
@@ -84,7 +86,7 @@ abstract class TweetSet {
    */
   def descendingByRetweet: TweetList
   
-  def descendingByRetweetAcc(acc : TweetList): TweetList
+ 
 
 
   /**
@@ -116,8 +118,9 @@ abstract class TweetSet {
 }
 
 class Empty extends TweetSet {
- 
-
+  def isEmpty: Boolean = true
+  val size : Int = 0
+  
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
 
   def union(that: TweetSet): TweetSet = that
@@ -129,7 +132,6 @@ class Empty extends TweetSet {
 
   def descendingByRetweet: TweetList = Nil
   
-  def descendingByRetweetAcc(acc : TweetList): TweetList = acc.reverse
   
   /**
    * The following methods are already implemented
@@ -145,7 +147,8 @@ class Empty extends TweetSet {
 }
 
 class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
- 
+  def isEmpty: Boolean = false
+  val size = 1 + left.size + right.size
   
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = {
     right.filterAcc(p, left.filterAcc(p, if (p(elem)) acc.incl(elem) else acc))
@@ -153,7 +156,18 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
   
   
   def union(that : TweetSet): TweetSet = {
-    new NonEmpty(elem, left union right, that)
+    
+    val a1 = if (left.size < right.size) {
+      left union right
+    } else {
+      right union left
+    }
+    if (a1.size < that.size) {
+      a1 union that incl elem
+    } else {
+      that union a1 incl elem
+    }
+    
   }
     
   def mostRetweeted: Tweet = mostRetweetedAcc(elem)
@@ -163,12 +177,20 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
   }
   
 
-  def descendingByRetweet: TweetList = descendingByRetweetAcc(Nil)
-  
-  def descendingByRetweetAcc(acc : TweetList) : TweetList = {
-    val most = mostRetweeted
-    remove(most).descendingByRetweetAcc(new Cons(most, acc))
+  def descendingByRetweet: TweetList = {
+    @tailrec
+    def descendingByRetweetAcc(tweetSet: TweetSet, acc: TweetList): TweetList = {
+      if (tweetSet.isEmpty) {
+        acc.reverse()
+      } else {
+        val most = tweetSet.mostRetweeted
+        descendingByRetweetAcc(tweetSet.remove(most), new Cons(most, acc))
+      }
+    }
+    descendingByRetweetAcc(this, Nil)
   }
+  
+  
 
   /**
    * The following methods are already implemented
@@ -255,7 +277,8 @@ object GoogleVsApple {
 
 object Main extends App {
   // Print the trending tweets
+  //Console.setOut(new FileOutputStream("output.txt"))
   
   GoogleVsApple.trending foreach println
- 
+  //GoogleVsApple.googleTweets
 }
