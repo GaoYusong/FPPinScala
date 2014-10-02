@@ -156,7 +156,9 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
   
   
   def union(that : TweetSet): TweetSet = {
-    
+    new NonEmpty(elem, left union (that.filter(x => x.text < elem.text)), 
+        right union (that.filter(x => x.text > elem.text)))
+    /*
     val a1 = if (left.size < right.size) {
       left union right
     } else {
@@ -167,6 +169,8 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
     } else {
       that union a1 incl elem
     }
+    *
+    */
     
   }
     
