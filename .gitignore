@@ -11,6 +11,7 @@ target/
 lib_managed/
 src_managed/
 project
+resources
 
 # Scala-IDE specific
 .scala_dependencies
